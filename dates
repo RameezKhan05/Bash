@@ -1,1 +1,2 @@
 current_date=`date "+%d %B %Y"`
+date_format=`date "+%m/%d/%y"`
