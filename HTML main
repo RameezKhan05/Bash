@@ -1,0 +1,129 @@
+#!/bin/bash
+#. $HOME/.profile
+
+#################################################################
+#################################################################
+#This script sends mail for the EOD data for all clients
+#Author : Rameez M. Khan
+#################################################################
+#################################################################
+
+SCRDIR=$HOME/scripts/EODSTATUS/PROD
+SCRIPT_NAME=prodstatMain.sh
+LOGDIR=$HOME/scripts/EODSTATUS/PROD/logs
+LOG_FILE=$LOGDIR/prodstatMain.log
+
+export ORACLE_SID=ABC
+export ORA_USER_ID=ABC
+export ORA_PASSWORD=ABC
+export ORACLE_HOME=/oracle/product/19.3/
+
+export ORA_USER_ID2="XYZ"
+export ORA_PASSWORD2="XYZ"
+export ORACLE_SID2="XYZ"
+
+export ORA_USER_ID3="HIJ"
+export ORA_PASSWORD3="HIJ"
+export ORACLE_SID3="HIJ"
+
+export SERVER_NAME=`whoami`
+
+MAIL_LIST="rameez.m.khan.1708@gmail.com"
+
+#####################################################
+# Functions
+#####################################################
+
+exit_success() {
+echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" >> ${LOG_FILE}
+echo `date` ":INFO :${SCRIPT}: Script SUCCESS." >> ${LOG_FILE}
+echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" >> ${LOG_FILE}
+}
+
+exit_fail() {
+echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" >> ${LOG_FILE}
+echo `date` ":ERROR :${SCRIPT}: Script FAILED." >> ${LOG_FILE}
+echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" >> ${LOG_FILE}
+mailx -s "$SCRIPT_NAME failed for $CLIENT_NAME" $MAIL_LIST <`tail -40 $LOG_FILE`
+exit 1
+}
+
+#################################################################
+# Main Function
+#################################################################
+
+echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" > ${LOG_FILE}
+echo `date` ":INFO :${SCRIPT}: Script STARTED." >> ${LOG_FILE}
+echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" >> ${LOG_FILE}
+
+#################################################################
+# check if we are running on holiday.
+#################################################################
+
+echo `date` ":INFO :${SCRIPT}: Checking for Holiday ." >> ${LOG_FILE}
+IS_HOLIDAY=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID2/$ORA_PASSWORD2@$ORACLE_SID2 <<END
+set pagesize 0 feedback off verify off heading off echo off
+select HOLIDAY_IND from L_DATE where LOCALE_NAME = 'unitedstates' and ACTUAL_DATE = trunc(sysdate);
+exit;
+END`
+
+if [ -z "$IS_HOLIDAY" ];
+       then
+		echo `date` ":ERROR :${SCRIPT}: NO Holiday Ind  in LOCALE_DATE table, Aborting..." >> ${LOG_FILE}
+		exit_fail
+elif [ $IS_HOLIDAY = "N" ];
+       then
+		echo `date` ":INFO :${SCRIPT}: Holiday: $IS_HOLIDAY" >> ${LOG_FILE}
+       else
+
+		keeplooping=1;
+
+		while [[ $keeplooping -eq 1 ]] ; do
+FORMAT_BUSINESS_DATE=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID3/$ORA_PASSWORD3@$ORACLE_SID3 <<END
+set pagesize 0 feedback off verify off heading off echo off
+select to_char(process_current_date, 'DD_MON_YYYY') from date_table where process_description = 'BATCH_BUSINESS_DATE';
+exit;
+END`
+		ls -ltr $LOGDIR/EOD_COMPLETE_$FORMAT_BUSINESS_DATE.txt > /dev/null 2>&1
+		if [[ $? -eq 0 ]]
+		then
+        	        echo `date` ":INFO :${SCRIPT}: ALL EOD mail was  sent, exiting script." >> ${LOG_FILE}
+                	keeplooping=0
+	                exit_success
+		else
+			echo `date` ":INFO :${SCRIPT}: Holiday: $IS_HOLIDAY" >> ${LOG_FILE}
+			echo `date` ":INFO :${SCRIPT}: Running Holiday EOD script." >> ${LOG_FILE}
+			nohup $SCRDIR/holi_eod_status_mail.sh & > /dev/null 2>&1
+        		echo `date` ":INFO :${SCRIPT}: Sleeping for 30 minutes." >> ${LOG_FILE}
+	        	sleep 1800
+		fi
+done
+fi
+#####################################################
+# Check & exit if ALL EOD mail was sent.
+#####################################################
+
+keeplooping=1;
+
+while [[ $keeplooping -eq 1 ]] ; do
+FORMAT_BUSINESS_DATE=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID2/$ORA_PASSWORD2@$ORACLE_SID2 <<END
+set pagesize 0 feedback off verify off heading off echo off
+select to_char(process_current_date, 'DD_MON_YYYY') from date_table where process_description = 'BATCH_BUSINESS_DATE';
+exit;
+END`
+ 
+ls -ltr $LOGDIR/EOD_COMPLETE_$FORMAT_BUSINESS_DATE.txt > /dev/null 2>&1
+
+if [[ $? -eq 0 ]]
+	then
+		echo `date` ":INFO :${SCRIPT}: ALL EOD mail was  sent, exiting script." >> ${LOG_FILE}
+		keeplooping=0
+		exit_success
+else
+	echo `date` ":INFO :${SCRIPT}: Calling EOD mail script." >> ${LOG_FILE}
+	nohup $SCRDIR/prod_eod_status_mail.sh & > /dev/null 2>&1
+	echo `date` ":INFO :${SCRIPT}: Sleeping for 30 minutes." >> ${LOG_FILE}
+	sleep 1800
+fi
+done
+
