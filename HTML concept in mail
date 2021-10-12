@@ -1,0 +1,643 @@
+#!/bin/bash
+#. $HOME/.profile
+
+#################################################################
+#################################################################
+#This script sends mail for the process data for all clients
+#Author : Rameez M. Khan
+#################################################################
+#################################################################
+
+SCRDIR=$HOME/scripts/EODSTATUS/PROD
+SCRIPT_NAME=prod_A_STATUS_mail.sh
+LOGDIR=$HOME/scripts/EODSTATUS/PROD/logs
+LOG_FILE=$LOGDIR/prod_A_STATUS_mail.log
+
+export ORACLE_SID=ABC
+export ORA_USER_ID=ABC
+export ORA_PASSWORD=ABC
+export ORACLE_HOME=/oracle/product/19.3/
+
+export ORACLE_SID2=XYZ
+export ORA_USER_ID2=XYZ
+export ORA_PASSWORD2=XYZ
+
+export SERVER_NAME=`whoami`
+export ALLCOUNT=48
+
+#MAIL_LIST="rameez.m.khan.1708@gmail.com"
+
+#####################################################
+# Functions
+#####################################################
+
+exit_success() {
+echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" >> ${LOG_FILE}
+echo `date` ":INFO :${SCRIPT}: Script SUCCESS." >> ${LOG_FILE}
+echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" >> ${LOG_FILE}
+}
+
+exit_fail() {
+echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" > ${LOG_FILE}
+echo `date` ":ERROR :${SCRIPT}: Script FAILED." >> ${LOG_FILE}
+echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" >> ${LOG_FILE}
+mailx -s "$SCRIPT_NAME failed for $CLIENT_NAME" $TO_LIST <`tail -40 $LOG_FILE`
+exit 1
+}
+
+#################################################################
+# Main Function
+#################################################################
+
+echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" > ${LOG_FILE}
+echo `date` ":INFO :${SCRIPT}: Script STARTED." >> ${LOG_FILE}
+echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" >> ${LOG_FILE}
+
+#####################################################
+# Check & exit if ALL EOD mail was sent.
+#####################################################
+
+FORMAT_BUSINESS_DATE=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID2/$ORA_PASSWORD2@$ORACLE_SID2 <<END
+set pagesize 0 feedback off verify off heading off echo off
+select to_char(process_current_date, 'DD_MON_YYYY') from date_table where process_description = 'B_BUSINESS_DATE';
+exit;
+END`
+
+#####################################################
+# Calling all scripts to check and updates statuses.
+#####################################################
+
+echo `date` ":INFO :${SCRIPT}: Calling all update scripts." >> ${LOG_FILE}
+
+nohup $SCRDIR/CALL_ALL_SCRIPTS.sh & > /dev/null 2>&1
+echo `date` ":INFO :${SCRIPT}: Called all update scripts." >> ${LOG_FILE}
+
+echo `date` ":INFO :${SCRIPT}: Sleeping for 90 seconds for running statuses to update." >> ${LOG_FILE}
+sleep 90
+
+#####################################################
+# Getting EOD counts from all tables.
+#####################################################
+
+RUNNING_BUSINESS_DATE=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID2/$ORA_PASSWORD2@$ORACLE_SID2 <<END
+set pagesize 0 feedback off verify off heading off echo off
+select to_char(process_current_date, 'DD MON YYYY') from date_table where process_description = 'B_BUSINESS_DATE';
+exit;
+END`
+
+RUNNING_BUSINESS_TIME=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+set pagesize 0 feedback off verify off heading off echo off
+alter session set time_zone = 'Asia/Calcutta';
+select to_char(current_date, 'HH:MI AM') from dual;
+exit;
+END`
+
+A_STATUS_COUNT=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+set pagesize 0 feedback off verify off heading off echo off
+select count(1) from A_STATUS where status = 'SUCCESS' and FIRM in (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15);
+exit;
+END`
+
+B_STATUS_COUNT=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+set pagesize 0 feedback off verify off heading off echo off
+select count(1) from B_STATUS where status = 'SUCCESS' and FIRM in (1,2,3,4);
+exit;
+END`
+
+AB_STATUS_COUNT=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+set pagesize 0 feedback off verify off heading off echo off
+select count(1) from AB_STATUS where status = 'SUCCESS' and FIRM in (1,2,3,4);
+exit;
+END`
+
+C_STATUS_COUNT=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+set pagesize 0 feedback off verify off heading off echo off
+select count(1) from C_STATUS where status = 'SUCCESS' and FIRM in (1,2,3,4,5,6,7,8,9,10,11,12,13,14);
+exit;
+END`
+
+D_STATUS_COUNT=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+set pagesize 0 feedback off verify off heading off echo off
+select count(1) from D_STATUS where status = 'SUCCESS' and FIRM in (64,29,89,41,2,70,36);
+exit;
+END`
+
+MINI_STATUS_COUNT=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+set pagesize 0 feedback off verify off heading off echo off
+select count(1) from O_STATUS where status = 'SUCCESS' and FIRM in (70,63,27,7);
+exit;
+END`
+
+PROCESSED_COUNT=$(expr $A_STATUS_COUNT + $B_STATUS_COUNT + $AB_STATUS_COUNT + $C_STATUS_COUNT + $D_STATUS_COUNT + $MINI_STATUS_COUNT)
+echo `date` ":INFO :${SCRIPT}: Total EODs completed now : $PROCESSED_COUNT." >> ${LOG_FILE}
+
+#####################################################
+# Check & exit if ALL EOD mail was sent.
+#####################################################
+
+FORMAT_BUSINESS_DATE=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID2/$ORA_PASSWORD2@$ORACLE_SID2 <<END
+set pagesize 0 feedback off verify off heading off echo off
+select to_char(process_current_date, 'DD_MON_YYYY') from date_table where process_description = 'B_BUSINESS_DATE';
+exit;
+END`
+echo `date` ":INFO :${SCRIPT}: $FORMAT_BUSINESS_DATE" >> ${LOG_FILE}
+
+if [[ $ALLCOUNT = $PROCESSED_COUNT ]];
+        then
+                export TO_LIST="abc@gmail.com"
+                export CC_LIST="abcxyz@gmail.com"
+                export SUBJECT="<ALL PROCESS COMPLETED> Status at $RUNNING_BUSINESS_TIME (IST) $RUNNING_BUSINESS_DATE"
+		echo `date` ":INFO :${SCRIPT}: All EODs completed $ALLCOUNT for $FORMAT_BUSINESS_DATE" >> ${LOG_FILE}
+		touch $LOGDIR/EOD_COMPLETE_$FORMAT_BUSINESS_DATE.txt
+        else
+		export TO_LIST="abcdef@gmail.com"
+                export CC_LIST="xyzabc@gmail.com"
+		export SUBJECT="Status at $RUNNING_BUSINESS_TIME (IST) $RUNNING_BUSINESS_DATE"
+		
+
+fi
+
+	echo "To: $TO_LIST"> $LOGDIR/status_report.html
+	echo "Cc: $CC_LIST">> $LOGDIR/status_report.html
+	echo "Subject: $SUBJECT">> $LOGDIR/status_report.html
+	echo "Content-Type: text/html; charset="us-ascii"" >> $LOGDIR/status_report.html
+	
+	echo "<html>
+			<body>
+				<table border = "1" style=\"font-family:Calibri;font-size:14.5px\">
+					<tr style=\"background-color: #7fae38; text-align:center\">
+						<th colspan = "5">SCM EOD Status Statistics </th>
+					</tr>
+					<tr style=\"background-color: #bada8c; text-align:center\">
+						<td><b>Client Name</b></td>
+						<td><b>Firm Number</b></td>
+						<td><b>EOD Status</b></td>
+						<td><b>Account Speed</b></td> 
+						<td><b>Time Stamp</b></td> 
+					</tr>" >> $LOGDIR/status_report.html	
+
+	for aclientfirm in `cat $SCRDIR/aclientfirm.txt`
+	do
+
+		CLIENTS=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+		set pagesize 0 feedback off verify off heading off echo off timing off
+		SELECT CLIENT FROM A_STATUS WHERE FIRM = $aclientfirm;
+		exit;
+END`
+
+		FIRMS=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+		set pagesize 0 feedback off verify off heading off echo off timing off
+		SELECT FIRM FROM A_STATUS WHERE FIRM = $aclientfirm;
+		exit;
+END`
+
+
+		STATUSES=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+		set pagesize 0 feedback off verify off heading off echo off timing off
+		SELECT STATUS FROM A_STATUS WHERE FIRM = $aclientfirm;
+		exit;
+END`
+
+                        if [ "$STATUSES" == "EOD Not Started" ]
+                        then
+                                colorcode="c13f4c"
+                        elif [ "$STATUSES" == "SUCCESS" ]
+                        then
+                                colorcode="2931EE"
+                        elif [ "$STATUSES" == "RUNNING" ]
+                        then
+                                colorcode="1BAC59"
+                        fi
+
+
+		SPEEDS=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+		set pagesize 0 feedback off verify off heading off echo off timing off
+		SELECT ACCOUNT_SPEED FROM A_STATUS WHERE FIRM = $aclientfirm;
+		exit;
+END`
+
+
+		TIMESTAMPS=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+		set pagesize 0 feedback off verify off heading off echo off timing off
+		SELECT TO_CHAR(TIMESTAMP, 'HH:MI DD MON YYYY') FROM A_STATUS WHERE FIRM = $aclientfirm;
+		exit;
+END`	
+
+		SAVEIFS=$IFS
+			IFS=$'\n'
+			mkt_outarray=($CLIENTS)
+			IFS=$SAVEIFS
+			
+		for ((i=0; i<${#mkt_outarray[@]};i++))
+		do
+			echo "<tr style=\"color: #$colorcode;\">
+					<td align=\"center\">$CLIENTS</td>
+					<td align=\"center\">$FIRMS</td>
+					<td>$STATUSES</td>
+					<td>$SPEEDS</td>
+					<td>$TIMESTAMPS</td> 
+				</tr>" >> $LOGDIR/status_report.html	
+		done
+	done
+
+	echo "</table>" >> $LOGDIR/status_report.html
+
+	echo "</br></br>" >> $LOGDIR/status_report.html
+
+	echo "<table border = "1" style=\"font-family:Calibri;font-size:14.5px\">
+			<tr style=\"background-color: #7fae38; text-align:center\">
+					<th colspan = "5">REPO EOD Status Statistics </th>
+			</tr>
+			<tr style=\"background-color: #bada8c; text-align:center\">
+					<td><b>Client Name</b></td>
+					<td><b>Firm Number</b></td>
+					<td><b>EOD Status</b></td>
+					<td><b>Account Speed</b></td>
+					<td><b>Time Stamp</b></td>
+			</tr>" >> $LOGDIR/status_report.html
+
+        for rclientfirm in `cat $SCRDIR/rclientfirm.txt`
+        do
+
+                CLIENTS=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT CLIENT FROM B_STATUS WHERE FIRM = $rclientfirm;
+                exit;
+END`
+
+                FIRMS=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT FIRM FROM B_STATUS WHERE FIRM = $rclientfirm;
+                exit;
+END`
+
+                STATUSES=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT STATUS FROM B_STATUS WHERE FIRM = $rclientfirm;
+                exit;
+END`
+
+                        if [ "$STATUSES" == "EOD Not Started" ]
+                        then
+                                colorcode="c13f4c"
+                        elif [ "$STATUSES" == "SUCCESS" ]
+                        then
+                                colorcode="2931EE"
+                        elif [ "$STATUSES" == "RUNNING" ]
+                        then
+                                colorcode="1BAC59"
+                        fi
+
+                SPEEDS=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT ACCOUNT_SPEED FROM B_STATUS WHERE FIRM = $rclientfirm;
+                exit;
+END`
+
+
+                TIMESTAMPS=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT TO_CHAR(TIMESTAMP, 'HH:MI DD MON YYYY') FROM B_STATUS WHERE FIRM = $rclientfirm;
+                exit;
+END`
+
+                SAVEIFS=$IFS
+                        IFS=$'\n'
+                        repo_outarray=($CLIENTS)
+                        IFS=$SAVEIFS
+
+                for ((i=0; i<${#repo_outarray[@]};i++))
+                do
+                        echo "<tr style=\"color: #$colorcode;\">
+                                        <td align=\"center\">$CLIENTS</td>
+                                        <td align=\"center\">$FIRMS</td>
+                                        <td>$STATUSES</td>
+                                        <td>$SPEEDS</td>
+                                        <td>$TIMESTAMPS</td>
+                                </tr>" >> $LOGDIR/status_report.html
+                done
+        done
+
+        echo "</table>" >> $LOGDIR/status_report.html
+
+        echo "</br></br>" >> $LOGDIR/status_report.html
+
+	echo "<table border = "1" style=\"font-family:Calibri;font-size:14.5px\">
+			<tr style=\"background-color: #7fae38; text-align:center\">
+					<th colspan = "5">ADJUST EOD REPO Status Statistics </th>
+			</tr>
+			<tr style=\"background-color: #bada8c; text-align:center\">
+					<td><b>Client Name</b></td>
+					<td><b>Firm Number</b></td>
+					<td><b>EOD Status</b></td>
+					<td><b>Account Speed</b></td>
+					<td><b>Time Stamp</b></td>
+			</tr>" >> $LOGDIR/status_report.html
+
+        for rclientfirm in `cat $SCRDIR/rclientfirm.txt`
+        do
+
+                CLIENTS=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT CLIENT FROM AB_STATUS WHERE FIRM = $rclientfirm;
+                exit;
+END`
+
+                FIRMS=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT FIRM FROM AB_STATUS WHERE FIRM = $rclientfirm;
+                exit;
+END`
+
+                STATUSES=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT STATUS FROM AB_STATUS WHERE FIRM = $rclientfirm;
+                exit;
+END`
+
+                        if [ "$STATUSES" == "EOD Not Started" ]
+                        then
+                                colorcode="c13f4c"
+                        elif [ "$STATUSES" == "SUCCESS" ]
+                        then
+                                colorcode="2931EE"
+                        elif [ "$STATUSES" == "RUNNING" ]
+                        then
+                                colorcode="1BAC59"
+                        fi
+
+                SPEEDS=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT ACCOUNT_SPEED FROM AB_STATUS WHERE FIRM = $rclientfirm;
+                exit;
+END`
+
+
+                TIMESTAMPS=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT TO_CHAR(TIMESTAMP, 'HH:MI DD MON YYYY') FROM AB_STATUS WHERE FIRM = $rclientfirm;
+                exit;
+END`
+
+                SAVEIFS=$IFS
+                        IFS=$'\n'
+                        arepo_outarray=($CLIENTS)
+                        IFS=$SAVEIFS
+
+                for ((i=0; i<${#arepo_outarray[@]};i++))
+                do
+                        echo "<tr style=\"color: #$colorcode;\">
+                                        <td align=\"center\">$CLIENTS</td>
+                                        <td align=\"center\">$FIRMS</td>
+                                        <td>$STATUSES</td>
+                                        <td>$SPEEDS</td>
+                                        <td>$TIMESTAMPS</td>
+                                </tr>" >> $LOGDIR/status_report.html
+                done
+        done
+
+        echo "</table>" >> $LOGDIR/status_report.html
+
+        echo "</br></br>" >> $LOGDIR/status_report.html
+
+	echo "<table border = "1" style=\"font-family:Calibri;font-size:14.5px\">
+			<tr style=\"background-color: #7fae38; text-align:center\">
+					<th colspan = "5">SFM EOD Status Statistics </th>
+			</tr>
+			<tr style=\"background-color: #bada8c; text-align:center\">
+					<td><b>Client Name</b></td>
+					<td><b>Firm Number</b></td>
+					<td><b>EOD Status</b></td>
+					<td><b>Account Speed</b></td>
+					<td><b>Time Stamp</b></td>
+			</tr>" >> $LOGDIR/status_report.html
+
+        for cclientfirm in `cat $SCRDIR/cclientfirm.txt`
+        do
+
+                CLIENTS=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT CLIENT FROM C_STATUS WHERE FIRM = $cclientfirm;
+                exit;
+END`
+
+                FIRMS=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT FIRM FROM C_STATUS WHERE FIRM = $cclientfirm;
+                exit;
+END`
+
+                STATUSES=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT STATUS FROM C_STATUS WHERE FIRM = $cclientfirm;
+                exit;
+END`
+
+                        if [ "$STATUSES" == "EOD Not Started" ]
+                        then
+                                colorcode="c13f4c"
+                        elif [ "$STATUSES" == "SUCCESS" ]
+                        then
+                                colorcode="2931EE"
+                        elif [ "$STATUSES" == "RUNNING" ]
+                        then
+                                colorcode="1BAC59"
+                        fi
+
+                SPEEDS=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT ACCOUNT_SPEED FROM C_STATUS WHERE FIRM = $cclientfirm;
+                exit;
+END`
+
+
+                TIMESTAMPS=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT TO_CHAR(TIMESTAMP, 'HH:MI DD MON YYYY') FROM C_STATUS WHERE FIRM = $cclientfirm;
+                exit;
+END`
+
+                SAVEIFS=$IFS
+                        IFS=$'\n'
+                        sfm_outarray=($CLIENTS)
+                        IFS=$SAVEIFS
+
+                for ((i=0; i<${#sfm_outarray[@]};i++))
+                do
+                        echo "<tr style=\"color: #$colorcode;\">
+                                        <td align=\"center\">$CLIENTS</td>
+                                        <td align=\"center\">$FIRMS</td>
+                                        <td>$STATUSES</td>
+                                        <td>$SPEEDS</td>
+                                        <td>$TIMESTAMPS</td>
+                                </tr>" >> $LOGDIR/status_report.html
+                done
+        done
+
+        echo "</table>" >> $LOGDIR/status_report.html
+
+        echo "</br></br>" >> $LOGDIR/status_report.html
+
+	echo "<table border = "1" style=\"font-family:Calibri;font-size:14.5px\">
+			<tr style=\"background-color: #7fae38; text-align:center\">
+					<th colspan = "4">CMVDAT Status Statistics </th>
+			</tr>
+			<tr style=\"background-color: #bada8c; text-align:center\">
+					<td><b>Client Name</b></td>
+					<td><b>Firm Number</b></td>
+					<td><b>EOD Status</b></td>
+					<td><b>Time Stamp</b></td>
+			</tr>" >> $LOGDIR/status_report.html
+
+        for dclientfirm in `cat $SCRDIR/dclientfirm.txt`
+        do
+
+                CLIENTS=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT CLIENT FROM D_STATUS WHERE FIRM = $dclientfirm;
+                exit;
+END`
+
+                FIRMS=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT FIRM FROM D_STATUS WHERE FIRM = $dclientfirm;
+                exit;
+END`
+
+                STATUSES=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT STATUS FROM D_STATUS WHERE FIRM = $dclientfirm;
+                exit;
+END`
+		
+                        if [ "$STATUSES" == "CMVDAT Not Started" ]
+                        then
+                                colorcode="c13f4c"
+                        elif [ "$STATUSES" == "SUCCESS" ]
+                        then
+                                colorcode="2931EE"
+                        elif [ "$STATUSES" == "RUNNING" ]
+                        then
+                                colorcode="1BAC59"
+                        fi
+		
+		TIMESTAMPS=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT TO_CHAR(TIMESTAMP, 'HH:MI DD MON YYYY') FROM D_STATUS WHERE FIRM = $dclientfirm;
+                exit;
+END`
+
+                SAVEIFS=$IFS
+                        IFS=$'\n'
+                        cmv_outarray=($CLIENTS)
+                        IFS=$SAVEIFS
+
+                for ((i=0; i<${#cmv_outarray[@]};i++))
+                do
+                        echo "<tr style=\"color: #$colorcode;\">
+                                        <td align=\"center\">$CLIENTS</td>
+                                        <td align=\"center\">$FIRMS</td>
+                                        <td>$STATUSES</td>
+                                        <td>$TIMESTAMPS</td>
+                                </tr>" >> $LOGDIR/status_report.html
+                done
+        done
+
+        echo "</table>" >> $LOGDIR/status_report.html
+
+        echo "</br></br>" >> $LOGDIR/status_report.html
+
+        echo "<table border = "1" style=\"font-family:Calibri;font-size:14.5px\">
+                        <tr style=\"background-color: #7fae38; text-align:center\">
+                                        <th colspan = "6">MINI EOD Status Statistics </th>
+                        </tr>
+                        <tr style=\"background-color: #bada8c; text-align:center\">
+                                <td><b>Client Name</b></td>
+                                <td><b>Firm Number</b></td>
+                                <td><b>Process Date</b></td>
+                                <td><b>EOD Status</b></td>
+                                <td><b>Account Speed</b></td>
+                                <td><b>Time Stamp</b></td>
+                        </tr>" >> $LOGDIR/status_report.html
+
+        for miniclientfirm in `cat $SCRDIR/miniclientfirm.txt`
+        do
+
+                CLIENTS=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT CLIENT FROM O_STATUS WHERE FIRM = $miniclientfirm;
+                exit;
+END`
+
+                FIRMS=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT FIRM FROM O_STATUS WHERE FIRM = $miniclientfirm;
+                exit;
+END`
+                PDATE=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT date_table FROM O_STATUS WHERE FIRM = $miniclientfirm;
+                exit;
+END`
+
+                STATUSES=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT STATUS FROM O_STATUS WHERE FIRM = $miniclientfirm;
+                exit;
+END`
+
+                        if [ "$STATUSES" == "EOD Not Started" ]
+                        then
+                                colorcode="c13f4c"
+                        elif [ "$STATUSES" == "SUCCESS" ]
+                        then
+                                colorcode="2931EE"
+                        elif [ "$STATUSES" == "RUNNING" ]
+                        then
+                                colorcode="1BAC59"
+                        elif [ "$STATUSES" == "HOLIDAY" ]
+                        then
+                                colorcode="D4AC0D"
+
+                        fi
+
+
+                SPEEDS=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT ACCOUNT_SPEED FROM O_STATUS WHERE FIRM = $miniclientfirm;
+                exit;
+END`
+
+
+                TIMESTAMPS=`${ORACLE_HOME}/bin/sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID <<END
+                set pagesize 0 feedback off verify off heading off echo off timing off
+                SELECT TO_CHAR(TIMESTAMP, 'HH:MI DD MON YYYY') FROM O_STATUS WHERE FIRM = $miniclientfirm;
+                exit;
+END`
+
+                SAVEIFS=$IFS
+                        IFS=$'\n'
+                        mkt_outarray=($CLIENTS)
+                        IFS=$SAVEIFS
+
+                for ((i=0; i<${#mkt_outarray[@]};i++))
+                do
+                        echo "<tr style=\"color: #$colorcode;\">
+                                        <td align=\"center\">$CLIENTS</td>
+                                        <td align=\"center\">$FIRMS</td>
+                                        <td>$PDATE</td>
+                                        <td>$STATUSES</td>
+                                        <td>$SPEEDS</td>
+                                        <td>$TIMESTAMPS</td>
+                                </tr>" >> $LOGDIR/status_report.html
+                done
+        done
+
+        echo "</table>" >> $LOGDIR/status_report.html
+
+        echo "</br></br>" >> $LOGDIR/status_report.html
+
+echo "</body></html>" >> $LOGDIR/status_report.html
+/usr/sbin/sendmail -t < $LOGDIR/status_report.html
+
+exit_success
