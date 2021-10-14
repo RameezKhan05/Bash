@@ -1,0 +1,215 @@
+#!/bin/bash
+. $HOME/.profile
+#
+#####################################################
+#####################################################
+#                                                   #
+# @(#)wedrecords.sh                             #
+# This script will check the counts in              #
+# client_execution_order, client_transaction_detail #
+# & transaction and compare them.                   #
+# Author : Rameez M. Khan                           #
+#####################################################
+#####################################################
+
+export ora_user_WBUPR="WDBSHMA_APP"
+export ora_pwd_WBUPR="lh3W0rldisflatnotr0und"
+export ora_sid_WBUPR="WDBSHPRD"
+
+export WAIT_EOD_TIME=3600
+#wait time for check, 1 hour.
+
+export SCRIPT_DIR=${HOME}/scripts/wedbushcount
+export LOG_FILE=${HOME}/scripts/wedbushcount/wedrecords.log
+
+export MAIL_LIST1="rameez.m.khan@gmail.com, Ashish.Mandlik@gmail.com"
+export MAIL_LIST="rameez.m.khan@gmail.com, Ashish.Mandlik@gmail.com"
+
+#export MAIL_LIST1=rameez.m.khan@gmail.com
+#export MAIL_LIST=rameez.m.khan@gmail.com, Ashish.Mandlik@gmail.com
+#export CC_LIST=rameez.m.khan@gmail.com, Ashish.Mandlik@gmail.com, rameez.m.khan@gmail.com, Ashish.Mandlik@gmail.com
+
+current_date=`date "+%d %B %Y"`
+date_format=`date "+%m/%d/%y"`
+
+cd ${SCRIPT_DIR}
+
+#########################################################
+# Main Function
+#########################################################
+echo " " > ${LOG_FILE}
+echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" >> ${LOG_FILE}
+echo `date` ":INFO :${SCRIPT}: Script STARTED." >> ${LOG_FILE}
+echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" >> ${LOG_FILE}
+
+######################################################
+#               FUNCTIONS
+######################################################
+exit_success(){
+  echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" >> ${LOG_FILE}
+  echo `date` ":INFO :${SCRIPT}: COMPLETED SUCCESSFULLY." >> ${LOG_FILE}
+  echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" >> ${LOG_FILE}
+  exit 0
+}
+
+exit_fail(){
+  echo " " >> ${LOG_FILE}
+  echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" >> ${LOG_FILE}
+  echo `date` ":ERROR :${SCRIPT}: Script FAILED ." >> ${LOG_FILE}
+  echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" >> ${LOG_FILE}
+  exit 1
+}
+
+log_msg(){
+
+  echo " " >> ${LOG_FILE}
+  echo `date` "$1" >> ${LOG_FILE}
+}
+
+#################################################
+# Holiday check. If running on holiday then script quits.
+#################################################
+
+echo `date` ":INFO :${SCRIPT}: checking for Holiday ." >> ${LOG_FILE}
+IS_HOLIDAY=`sqlplus -s $ora_user_WBUPR/$ora_pwd_WBUPR@$ora_sid_WBUPR <<END
+set pagesize 0 feedback off verify off heading off echo off
+select HOLIDAY_IND from LOCALE_DATE where LOCALE_NAME = 'unitedstates' and ACTUAL_DATE = trunc(sysdate);
+exit;
+END`
+
+#check if we received any thing.
+if [ -z "$IS_HOLIDAY" ]; then
+  echo "No rows returned from database"
+  echo `date` ":ERROR :${SCRIPT}: NO Holiday Ind  in LOCALE_DATE table, Aborting..." >> ${LOG_FILE}
+  exit_fail
+fi
+
+if [ $IS_HOLIDAY = "N" ]; then
+  echo `date` ":INFO :${SCRIPT}: Holiday: $IS_HOLIDAY" >> ${LOG_FILE}
+else
+  echo `date` ":INFO :${SCRIPT}: Holiday: $IS_HOLIDAY" >> ${LOG_FILE}
+  exit 1
+fi
+
+#################################################
+# Read the Business date from PROCESS_DATE table.
+#################################################
+
+echo `date` ":INFO :${SCRIPT}: selecting Business Date from Process_date table." >> ${LOG_FILE}
+BUSINESS_DATE=`sqlplus -s $ora_user_WBUPR/$ora_pwd_WBUPR@$ora_sid_WBUPR <<END
+set pagesize 0 feedback off verify off heading off echo off
+select TO_CHAR(PROCESS_CURRENT_DATE, 'MM/DD/YYYY') from PROCESS_DATE where PROCESS_DESCRIPTION = 'BATCH_BUSINESS_DATE';
+exit;
+END`
+
+#check if we received any thing.
+if [ -z "$BUSINESS_DATE" ]; then
+  echo "No rows returned from database"
+  echo `date` ":ERROR :${SCRIPT}: NO PROCESS_CURRENT_DATE in PROCESS_DATE table, Aborting..." >> ${LOG_FILE}
+  exit_fail
+else
+  echo `date` ":INFO :${SCRIPT}: Businessdate: $BUSINESS_DATE" >> ${LOG_FILE}
+fi
+
+#########################
+output1=$(sqlplus -s $ora_user_WBUPR/$ora_pwd_WBUPR@$ora_sid_WBUPR << END
+set pagesize 0 verify off timing off heading on
+select count(1) From client_execution_order where client_id in('WBU') and record_type = 1;
+exit;
+END
+)
+echo "Count of client_execution_order is $output1" >> ${LOG_FILE}
+
+output2=$(sqlplus -s $ora_user_WBUPR/$ora_pwd_WBUPR@$ora_sid_WBUPR << END
+set pagesize 0 verify off timing off heading on
+select count(1) from client_transaction_detail where entry_Date = (select process_current_date from process_date WHERE process_description = 'BATCH_BUSINESS_DATE') and ext_transaction_id like '%EXECWBU%';
+exit;
+END
+)
+echo "Count of client_transaction_detail is $output2" >> ${LOG_FILE}
+
+#output3=$(sqlplus -s $ora_user_WBUPR/$ora_pwd_WBUPR@$ora_sid_WBUPR << END
+#set pagesize 0 verify off timing off heading on
+#select count(1) from transaction where transaction_type = 5 and entry_date = (select process_current_date from process_date WHERE process_description = 'BATCH_BUSINESS_DATE') and external_transaction_id like '%EXECWBU%';
+#exit;
+#END
+#)
+#echo "Count of transaction is $output3" >> ${LOG_FILE}
+
+output4=$(sqlplus -s $ora_user_WBUPR/$ora_pwd_WBUPR@$ora_sid_WBUPR << END
+set pagesize 0 verify off timing off heading on
+SELECT program_name FROM btcctl WHERE program_name LIKE 'CMVDWN %';
+exit;
+END
+)
+echo $output4 >> ${LOG_FILE}
+
+output5=$(sqlplus -s $ora_user_WBUPR/$ora_pwd_WBUPR@$ora_sid_WBUPR << END
+set pagesize 0 verify off timing off heading on
+SELECT count(1) FROM btcctl WHERE program_name in ('CMVDWNS1','CMVDWNS2','CMVDWNU1','CMVDWNU2');
+exit;
+END
+)
+echo $output5 >> ${LOG_FILE}
+
+echo "Hello," > wedrecords.txt
+echo " " >> wedrecords.txt
+
+#################################################################
+# Check the dependency
+#################################################################
+echo `date` ":INFO :${SCRIPT}: Checking dependency, EOD from Process_control table." >> ${LOG_FILE}
+keeplooping=1;
+elapsed_time=0
+
+if [ $output1 -ne $output2 ]; then
+  echo `date` ":INFO :${SCRIPT}: records don't match in client_execution_order & client_transaction_detail" >> ${LOG_FILE}
+  sleep 600
+  elapsed_time=`expr $elapsed_time + 600`
+  if [ $elapsed_time -gt $WAIT_EOD_TIME ] ; then
+        echo `date` ":ERROR :${SCRIPT}: Exiting after waiting for $WAIT_EOD_TIME seconds for matching" >> ${LOG_FILE}
+	echo "The records dont match. Records in execution are $output1, records in transaction are $output2 " >> wedrecords.txt
+	exit_fail
+  fi
+else
+  echo `date` ":INFO :${SCRIPT}: records match : ${output2}" >> ${LOG_FILE}
+  echo "We have received execution file from Wedbush for $current_date with $output1 records. File date looks good. The same rows have been loaded in CLIENT_EXECUTION_ORDER table as well as CLIENT_TRANSACTION_DETAILS table." >> wedrecords.txt
+  keeplooping=0
+
+fi
+
+echo " " >> wedrecords.txt
+
+if [ "$output4" = "CMVDWN" ]
+then
+        echo "We have received CMVDWN for today." >> wedrecords.txt
+else
+        echo "We have not received CMVDWN for today." >> wedrecords.txt
+fi
+
+echo " " >> wedrecords.txt
+echo " " >> wedrecords.txt
+
+echo "Rameez Khan" >> wedrecords.txt
+echo "Specialist – Systems" >> wedrecords.txt
+echo "Securities, Finance & Processing" >> wedrecords.txt
+echo "T:   +91 20 67292257" >> wedrecords.txt
+echo "C:  +91 7391096958" >> wedrecords.txt
+echo "E:   rameez.khan@gmail.com" >> wedrecords.txt
+echo "FIS | Empowering the Financial World" >> wedrecords.txt
+
+#####################################################
+# Mail Functions
+#####################################################
+
+if [ $output1 -eq $output2 ]
+then
+#        cat /app/home/reconusr/scripts/wedbushcount/wedrecords.txt | mailx -s "WEDBUSH PROD : Executions processing $date_format" -r $MAIL_LIST1 -c $CC_LIST $MAIL_LIST
+	cat /app/home/reconusr/scripts/wedbushcount/wedrecords.txt | mailx -s "WEDBUSH PROD : Executions processing $date_format" $MAIL_LIST
+else
+        cat /app/home/reconusr/scripts/wedbushcount/wedrecords.txt | mailx -s "WEDBUSH PROD : Please check Executions processing $date_format" $MAIL_LIST1
+fi
+
+##########################################################
+# End of Functions
+##########################################################
