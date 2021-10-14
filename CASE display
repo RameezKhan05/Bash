@@ -1,0 +1,66 @@
+#!/bin/sh
+
+trap "" 1 2 3
+displayHeader()
+{
+echo "############################"
+echo "         Login Main Menu "
+echo " Options: "
+echo "  1. ABC UPDATE "
+echo "  2. DEF UPDATE "
+echo "  3. GHI UPDATE "
+echo "  4. To Exit Back To Login Session"
+echo "############################"
+echo " "
+}
+
+Main_Menu()
+{
+                displayHeader
+                printf "Enter option: "
+                read OPT1
+                case $OPT1 in
+                                        1) abc ;;
+                                        2) def ;;
+                                        3) ghi ;;
+                                        4) echo "" ;echo "Exiting Out Of This Menu" ;sleep 3; clear ; exit ;;
+                                        *) Menu_Error;;
+                esac
+}
+
+
+abc()
+{
+                clear
+				./ABC_update.sh
+				Main_Menu
+}
+def()
+{
+                clear
+				./DEF_update.sh
+				Main_Menu
+}
+ghi()
+{
+                clear
+				./GHI_update.sh
+				Main_Menu
+}
+
+Menu_Error()
+{
+                echo "Option $OPT1 is Invalid."
+                echo "Please Enter a Valid Option."
+                printf "Press Return to Continue... "
+                read JUNK
+                clear
+                Main_Menu
+}
+
+###########################
+#Actual script begins here
+###########################
+
+clear
+Main_Menu
