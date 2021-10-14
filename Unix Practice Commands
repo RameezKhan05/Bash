@@ -175,3 +175,182 @@ alias fixpr='ps -fu `whoami`|grep -i fix'
 crontab -l|grep -v '#'|sort -k 2,2
 
 MAIL_DATE=`${ORACLE_HOME}/bin/sqlplus -s ${ORA_USER_ID}/${ORA_PASSWORD}@${ORACLE_SID} <<END
+
+
+###############################################################################################################################
+
+
+Loop test
+
+for file in `cat /app/home/reconusr/rmkhan/userfile.txt`
+do
+	ssh $file@170.132.113.44 tail -3 /data/home/$file/stream/script/start |head -1 |cut -c 12-16
+done
+
+######################################################################################
+Copy files
+#!/bin/bash
+. $HOME/.profile
+
+file_name=`ls -ltr /app/home/reconusr/rmkhan|head -2|tail -1|awk '{print $9}'`
+echo $file_name
+cd /app/home/reconusr/rmkhan
+cp $file_name /app/home/reconusr/rmkhan/arch 
+
+######################################################################################
+Chessboard
+
+#!/bin/bash
+for (( i = 1; i <= 8; i++ )) ### Outer for loop ###
+do
+   for (( j = 1 ; j <= 8; j++ )) ### Inner for loop ###
+   do
+        total=$(( $i + $j))   # total 
+        tmp=$(( $total % 2))  # modulus
+        # Find out odd and even number and change the color 
+        # alternating colors using odd and even number logic  
+        if [ $tmp -eq 0 ]; 
+        then
+            echo -e -n "\033[40m  "
+        else
+            echo -e -n "\033[47m  "
+        fi
+  done
+ echo "" #### print the new line ###
+done
+
+######################################################################################
+UPdate table in database
+#!/bin/bash
+. $HOME/.profile
+
+export ora_user="ABC"
+export ora_pwd="ABC"
+export ora_sid="ABC"
+
+sqlplus -s $ora_user/$ora_pwd@$ora_sid << END
+set pagesize 0 verify off timing off heading on
+UPDATE table SET processed_status = 0 ,retry_counter=0 WHERE processed_status = 7 and retry_counter=5 and table_name = 'FAIMST';
+commit;
+exit;
+END
+
+######################################################################################
+SSH logic
+
+#!/usr/bin/expect -f
+#  ./ssh.exp password 
+
+spawn ssh user@ip_add_ress
+match_max 100000
+expect "*?assword:*"
+send -- "password\r"
+send -- "\r"
+interact
+
+######################################################################################
+Two files in for
+
+#for ((i in `cat /app/home/reconusr/rmkhan/alphabets.txt`, j in `cat /app/home/reconusr/rmkhan/numbers.txt` ; i++, j++))
+#for i in `cat /app/home/reconusr/rmkhan/alphabets.txt` , for j in `cat /app/home/reconusr/rmkhan/numbers.txt` 
+#for ((i=1, j=10; i <= 5 ; i++, j=j+5)) 
+#do
+#echo 'this is numbers' $i 'this ios alpha' $j 
+#and alphabets $i
+#done
+#!/bin/bash
+for  i in `cat /app/home/reconusr/rmkhan/alphabets.txt`  
+do
+   for j in `cat /app/home/reconusr/rmkhan/numbers.txt` 
+   do
+        echo 'this is numbers' $i 'this ios alpha' $j
+	# Find out odd and even number and change the color 
+        # alternating colors using odd and even number logic  
+  done
+ echo "" #### print the new line ###
+done
+######################################################################################
+CCBCC
+
+#!/bin/bash
+. $HOME/.profile
+
+export MAIL_LIST1=Debasish.Parida@gmail.com
+export MAIL_LIST=rameez.m.khan@gmail.com,Ashish.Mandlik@gmail.com
+
+echo "Hello," > prank.txt
+echo " " >> prank.txt
+
+echo " I am feeling happy and proud about a decision I am taking today and finally sharing with you all." >> prank.txt
+echo "I am moving to GOA effective immediately and will be opening up a shack in south GOA" >> prank.txt
+echo "I hope to see you all soon" >> prank.txt
+
+echo " " >> prank.txt
+
+echo " " >> prank.txt
+echo " " >> prank.txt
+
+echo "Debasish Parida" >> prank.txt                         
+echo "Senior Engineer - Systems" >> prank.txt
+echo "Securities, Finance & Processing" >> prank.txt
+echo "T:   +91 20 67292259" >> prank.txt
+echo "E:   Debasish.Parida@gmail.com" >> prank.txt
+echo "FIS | Empowering the Financial World" >> prank.txt
+
+        cat /app/home/reconusr/rmkhan/prank.txt | mailx -s "New Beginings" -r $MAIL_LIST1 -b $MAIL_LIST $MAIL_LIST1
+
+######################################################################################
+
+Case Study
+
+#!/bin/sh
+Main_Menu() {
+	printf "Enter option: "
+        read OPT1
+	case  "$OPT1" in
+       linux)
+            echo "Enter Client (A, B, C, D, E, F, G, H, I, J, K, L, M) :"
+			read client
+			echo -e "\n"
+			if [ "$client" = A ];
+			then
+			echo -e "A\n"
+		#	sqlplus -s $ora_user_TSS/$ora_pwd_TSS@$ora_sid_TSS<<-END
+                #       set pagesize 0 verify off timing off heading on
+                  # $     SELECT status FROM  processing WHERE process_description like 'RECON REPORT' and process_date = '10oct16'
+                   #     END
+	
+			else if [ "$client" = D ];
+			then
+			echo -e "D\n"
+			fi
+            fi
+            ;;
+       Windows)
+            echo "Enter Client (A, B, C, D, E, F, G, H, I, J, K, L, M) :"
+			read client
+			echo -e "\n"
+			if [ "$client" = B ];
+			then
+			echo -e "B\n"
+            fi
+            ;;
+       Android)
+            echo "Enter Client (A, B, C, D, E, F, G, H, I, J, K, L, M) :"
+			read client
+			echo -e "\n"
+			if [ "$client" = E ];
+			then
+			echo -e "E\n"
+            fi
+            ;;
+    esac
+}
+
+###########################
+#Actual script begins here
+###########################
+
+clear
+Main_Menu
+END
