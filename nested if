@@ -1,0 +1,96 @@
+#!/bin/ksh
+#. $HOME/.profile
+
+#####################################################
+
+HOLIDAY_DEPENDENCY=1
+SCRDIR=$HOME/scripts/loom
+SCRIPT_NAME=loom_adjutment.sh
+LOGDIR=$HOME/scripts/loom/logs
+
+export ORACLE_SID=abc
+export ORA_USER_ID=abc
+export ORA_PASSWORD=abc
+export ORACLE_HOME=/home/oracle/
+##We are using log of parent script for better tracking..
+LOG_FILE=$LOGDIR/loom_adjutment.log
+
+MAIL_LIST="rameez.m.khan@gmail.com"
+
+echo " " >> ${SCRDIR}/logs/loom_adjutment.log
+
+#################################################
+# check if we are running on holiday, if so just quit.
+# This is not the best way to run scheduler but ,
+# batch jobs are spread all over, so I am doing this.
+#################################################
+
+echo `date` ":INFO :${SCRIPT}: checking for Holiday ." >> ${LOG_FILE}
+IS_HOLIDAY=`${ORACLE_HOME}/bin/sqlplus -silent ${ORA_USER_ID}/${ORA_PASSWORD}@${ORACLE_SID} <<END
+set pagesize 0 feedback off verify off heading off echo off
+select HOLIDAY from LOCAL_DATE where LOCAL_NAME = 'united' and ACTUAL_DATE = trunc(sysdate);
+exit;
+END`
+
+#check if we received any thing.
+if [ -z "$IS_HOLIDAY" ]; then
+  echo "No rows returned from database"
+  echo `date` ":ERROR :${SCRIPT}: NO Holiday Ind  in LOCAL_DATE table, Aborting..." >> ${LOG_FILE}
+  exit 1
+elif [ $IS_HOLIDAY = "N" ]; then
+  echo `date` ":INFO :${SCRIPT}: Holiday: $IS_HOLIDAY" >> ${LOG_FILE}
+else
+  echo `date` ":INFO :${SCRIPT}: Holiday: $IS_HOLIDAY" >> ${LOG_FILE}
+  exit 1
+fi
+
+POS_ADJ_CNT=`${ORACLE_HOME}/bin/sqlplus -silent ${ORA_USER_ID}/${ORA_PASSWORD}@${ORACLE_SID} <<END
+set pagesize 0 feedback off verify off heading off echo off timing off
+select count(1) from rectable where source_system = 'loom' and record_type = 'POS'
+and error_type <> ' ' and security_id != -9 and
+(
+((external_trade_value_long + external_trade_value_short) -
+(to_number(to_char((internal_trade_value_long + internal_trade_value_short), '99999999999999999999.99')))) <> 0
+OR
+((external_settle_value_long + external_settle_value_short) -
+(to_number(to_char((internal_settle_value_long + internal_settle_value_short), '99999999999999999999.99')))) <> 0
+);
+exit;
+END`
+
+echo $POS_ADJ_CNT
+
+if [ $POS_ADJ_CNT -gt 10 ]; then
+echo $POS_ADJ_CNT
+
+${ORACLE_HOME}/bin/sqlplus -silent ${ORA_USER_ID}/${ORA_PASSWORD}@${ORACLE_SID} @${SCRDIR}/procedure.sql 2>>${LOG_FILE}
+
+        returnval=$?
+        err=`cat ${LOG_FILE} | grep ORA`
+        if [ "$returnval" -eq 0 -a "$err" = "" ] ; then
+                echo "INFO :${SCRIPT_NAME} : procedure.sql ran successfully" >> ${SCRDIR}/logs/loom_adjutment.log
+		echo >> $LOGDIR/bloom_report
+                echo "INFO :${SCRIPT_NAME} : procedure.sql ran successfully" >> ${SCRDIR}/logs/bloom_report
+                mailx -s "Info:Status from loom_adjutment.sh Script" $MAIL_LIST < $LOGDIR/bloom_report
+                rm $LOGDIR/bloom_report
+                exit1
+        else
+                echo "ERROR :${SCRIPT_NAME} :${CLIENT}: Problem with procedure.sql..please check" >> ${SCRDIR}/logs/loom_adjutment.log
+		echo >> $LOGDIR/bloom_report
+                echo "ERROR :${SCRIPT_NAME} : Problem with procedure.sql..please check" >> ${SCRDIR}/logs/bloom_report
+                mailx -s "ERROR:Status from loom_adjutment.sh Script" $MAIL_LIST < $LOGDIR/bloom_report
+                rm $LOGDIR/bloom_report
+                exit 1
+        fi
+
+else 
+
+                echo "INFO :${SCRIPT_NAME} : No. of Position Adjustments required is: $POS_ADJ_CNT, script not run" >> ${SCRDIR}/logs/loom_adjutment.log
+                echo >> $LOGDIR/bloom_report
+                echo "INFO :${SCRIPT_NAME} : No. of Position Adjustments required is: $POS_ADJ_CNT, script not run" >> ${SCRDIR}/logs/bloom_report
+                mailx -s "Info:Status from loom_adjutment.sh Script" $MAIL_LIST < $LOGDIR/bloom_report
+                rm $LOGDIR/bloom_report
+                exit 1
+fi
+
+echo " " >> ${SCRDIR}/logs/loom_adjutment.log
