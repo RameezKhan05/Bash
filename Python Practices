@@ -1,0 +1,106 @@
+Print Hello World
+
+#! /usr/bin/python2
+
+print ("Hello World!")
+
+######################################################################################################
+
+Main function logic
+
+#! /usr/bin/python
+
+def getInt():
+	num = int(input("Enter a number : "))
+	return num
+
+def Main():
+	print("Main Function Started")
+	output = getInt()
+	print("User entered : ", output)
+
+#if __name__ == "__main__":
+#	Main()
+
+Main()
+
+######################################################################################################
+Swapping in List
+
+#! /usr/bin/python2
+
+orgList = [1, 2, 3, 4, 5, 6]
+
+print ("Current List: " )
+print (orgList)
+x = input("Enter 1st position : ")
+y = input("Enter 2nd position : ")
+def newList(orgList):
+#	size = len(orgList)
+	temp = orgList [x - 1]
+	orgList [x - 1] = orgList [y - 1]
+	orgList [y - 1] = temp
+	return orgList
+
+print (newList(orgList))
+
+######################################################################################################
+Adding 2 numbers by user input
+
+#! /usr/bin/python
+
+num1 = int(input("Enter 1st number : "))
+num2 = int(input("Enter 2nd number : "))
+
+num3 = num1 + num2
+
+#num3 = lambda num1,num2:num1 + num2
+
+print ("Addition of your numbers is : ", num3)
+
+######################################################################################################
+user input
+
+#! /usr/bin/python
+
+name = input("Enter your first name :")
+
+print('Hello ', name)
+
+######################################################################################################
+Addition
+
+#!/usr/bin/python
+
+print("Python is fun.")
+
+print (5+5)
+
+print (100*1.1**7)
+
+######################################################################################################
+Function Logic
+
+#! /usr/bin/python
+
+def printFun():
+	print ("This is a function!")
+
+printFun()
+
+######################################################################################################
+If condition logic
+
+#! /usr/bin/python
+
+x = int(input ("Enter any whole number : "))
+
+if (x>100):
+	print ("Your number is bigger than 100")
+elif (x<1):
+	print ("Your number is less than 1")
+elif (x>=1 and x<100):
+	print ("You have chosen a number within range")
+else:
+	print ("You have to enter a whole number")
+
