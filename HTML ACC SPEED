@@ -1,0 +1,224 @@
+#!/bin/bash
+. $HOME/.profile
+#################################################################
+#################################################################
+#This script checks and inserts EOD status
+#for EOD status mail script
+#################################################################
+#################################################################
+
+export SCRDIR=$HOME/scripts/EODSTATUS/PROD
+export LOGDIR=$SCRDIR/logs
+
+export ora_user_SCOI="ABC"
+export ora_pwd_SCOI="ABC"
+export ora_sid_SCOI="ABC"
+
+export ORA_USER_ID="ABC"
+export ORA_PASSWORD="ABC"
+export ORACLE_SID="ABC"
+
+export SCRIPT=EOD_Status_D.sh
+export LOG_FILE=$LOGDIR/EOD_Status_D.log
+
+export SERVER_NAME=`whoami`
+export COUNT=0
+export RUNNING="RUNNING"
+export SUCCESS="SUCCESS"
+#export MAIL_LIST=rameez.m@gmail.com
+
+#################################################################
+# Functions
+#################################################################
+
+exit_success()
+	{
+		echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" >> ${LOG_FILE}
+		echo `date` ":INFO :${SCRIPT}: COMPLETED SUCCESSFULLY." >> ${LOG_FILE}
+		echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" >> ${LOG_FILE}
+		exit 0
+	}
+
+exit_fail()
+	{
+		echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" >> ${LOG_FILE}
+		echo `date` ":ERROR :${SCRIPT}: Script FAILED ." >> ${LOG_FILE}
+		echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" >> ${LOG_FILE}
+		#send_email.ksh "CMVDWN script runCMVDWNCheck.ksh failed for $CLIENT. Please check log."
+		exit 1
+	}
+
+notstart()
+        {
+		sqlplus -s $ora_user_SCOI/$ora_pwd_SCOI@$ora_sid_SCOI << EOF
+		set pagesize 0 verify off timing off heading on
+		UPDATE EOD_STATUS set STATUS = 'EOD Not Started', ACCOUNT_SPEED = NULL, TIMESTAMP = sysdate where FIRM = '46';
+		COMMIT;
+		QUIT
+EOF
+		echo `date` ":INFO :${SCRIPT}: EOD Has Not Started Yet. Updating the table" >> ${LOG_FILE}
+#		exit 2
+        }
+
+runstate()
+        {
+                sqlplus -s $ora_user_SCOI/$ora_pwd_SCOI@$ora_sid_SCOI << EOF
+                set pagesize 0 verify off timing off heading on
+                UPDATE EOD_STATUS set STATUS = '$MARGIN_STATUS', ACCOUNT_SPEED = '$PROCESSED_COUNT2/$TOTAL_COUNT@$SPEED ac/min', TIMESTAMP = sysdate where FIRM = '46';
+                COMMIT;
+                QUIT
+EOF
+		echo `date` ":INFO :${SCRIPT}: EOD is running. Updating the table" >> ${LOG_FILE}
+#                exit 3
+        }
+
+entryfound()
+        {
+                sqlplus -s $ora_user_SCOI/$ora_pwd_SCOI@$ora_sid_SCOI << EOF
+                set pagesize 0 verify off timing off heading on
+                UPDATE EOD_STATUS set STATUS = '$MARGIN_STATUS', ACCOUNT_SPEED = NULL, TIMESTAMP = sysdate where FIRM = '46';
+                COMMIT;
+                QUIT
+EOF
+#                exit 4
+        }
+
+#################################################################
+# Main Function
+#################################################################
+
+echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" > ${LOG_FILE}
+echo `date` ":INFO :${SCRIPT}: Script STARTED." >> ${LOG_FILE}
+echo `date` ":INFO :${SCRIPT}: +++++++++++++++++" >> ${LOG_FILE}
+
+#################################################################
+# Get Current Business date.
+#################################################################
+
+RUNNING_BUSINESS_DATE=`sqlplus -silent ${ORA_USER_ID}/${ORA_PASSWORD}@${ORACLE_SID} <<END
+set pagesize 0 feedback off verify off heading off echo off
+select process_current_date from date_table where process_description = 'BATCH_BUSINESS_DATE';
+exit;
+END`
+echo `date` ":INFO :${SCRIPT}: Current business date is $RUNNING_BUSINESS_DATE" >> ${LOG_FILE}
+
+totalcount()
+        {
+                        TOTAL_COUNT=`sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID << END
+                        set pagesize 0 verify off timing off heading on
+                        SELECT COUNT(1) FROM eod_margin_calc_account_info WHERE business_date=(select process_current_date from date_table where process_description = 'BATCH_BUSINESS_DATE');
+END`
+#                        QUIT
+                        echo `date` ":INFO :${SCRIPT}: Total accounts for business date $RUNNING_BUSINESS_DATE is $TOTAL_COUNT" >> ${LOG_FILE}
+                        return $TOTAL_COUNT
+                        exit 5
+}
+
+processcount1()
+        {
+			PROCESSED_COUNT1=`sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID << END
+                        set pagesize 0 verify off timing off heading on
+                        SELECT COUNT(1) FROM eod_margin_calc_account_info WHERE business_date=(select process_current_date from date_table where process_description = 'BATCH_BUSINESS_DATE') and processed_status=1;
+END`
+                        echo `date` ":INFO :${SCRIPT}: Total accounts processed is $PROCESSED_COUNT1" >> ${LOG_FILE}
+						return $PROCESSED_COUNT1
+                        exit 6
+}
+
+processcount2()
+        {
+			PROCESSED_COUNT2=`sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID << END
+                        set pagesize 0 verify off timing off heading on
+                        SELECT COUNT(1) FROM eod_margin_calc_account_info WHERE business_date=(select process_current_date from date_table where process_description = 'BATCH_BUSINESS_DATE') and processed_status=1;
+END`
+                        echo `date` ":INFO :${SCRIPT}: Total accounts processed is $PROCESSED_COUNT2" >> ${LOG_FILE}
+						return $PROCESSED_COUNT2
+                        exit 7
+}
+
+#################################################################
+# check if we are running on holiday.
+#################################################################
+
+#echo `date` ":INFO :${SCRIPT}: Checking for Holiday ." >> ${LOG_FILE}
+#IS_HOLIDAY=`sqlplus -silent ${ORA_USER_ID}/${ORA_PASSWORD}@${ORACLE_SID} <<END
+#set pagesize 0 feedback off verify off heading off echo off
+#select HOLIDAY_IND from LOCALE_DATE where LOCALE_NAME = 'unitedstates' and ACTUAL_DATE = trunc(sysdate);
+#exit;
+#END`
+#
+#if [ -z "$IS_HOLIDAY" ];
+#	then
+#		echo "No rows returned from database"
+#		echo `date` ":ERROR :${SCRIPT}: NO Holiday Ind  in LOCALE_DATE table, Aborting..." >> ${LOG_FILE}
+#		exit_fail
+#elif [ $IS_HOLIDAY = "N" ];
+#	then
+#		echo `date` ":INFO :${SCRIPT}: Holiday: $IS_HOLIDAY" >> ${LOG_FILE}
+#	else
+#		echo `date` ":INFO :${SCRIPT}: Holiday: $IS_HOLIDAY" >> ${LOG_FILE}
+#		exit 1
+#fi
+
+#################################################################
+# Check EOD status 
+#################################################################
+
+MARGIN_STATUS_COUNT=$(sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID << END
+set pagesize 0 verify off timing off heading on
+select count(1) from processing where process_description ='EOD_MARGIN_CALC' and date_table=(select process_current_date from date_table where process_description = 'BATCH_BUSINESS_DATE');
+exit;
+END
+)
+
+MARGIN_STATUS=$(sqlplus -s $ORA_USER_ID/$ORA_PASSWORD@$ORACLE_SID << END
+set pagesize 0 verify off timing off heading on
+select status from processing where process_description ='EOD_MARGIN_CALC' and date_table=(select process_current_date from date_table where process_description = 'BATCH_BUSINESS_DATE');
+exit;
+END
+)
+
+if [ $COUNT = $MARGIN_STATUS_COUNT ]; 
+	then
+	echo `date` ":INFO :${SCRIPT}: EOD Has Not Started Yet." >> ${LOG_FILE}
+else 
+	echo `date` ":INFO :${SCRIPT}: EOD is $MARGIN_STATUS ." >> ${LOG_FILE}
+fi
+
+#################################################################
+# Check EOD speed if running. 
+#################################################################
+
+if [ $COUNT = $MARGIN_STATUS_COUNT ];
+	then
+		notstart
+		
+	else if [ $RUNNING = $MARGIN_STATUS ];
+		then
+			totalcount
+			processcount1	
+			
+			sleep 60
+			echo `date` ":INFO :${SCRIPT}: Sleeping for a minute" >> ${LOG_FILE}
+
+			processcount2			
+			
+			SPEED=`expr $PROCESSED_COUNT2 - $PROCESSED_COUNT1`
+			echo `date` ":INFO :${SCRIPT}: Current processing speed : $SPEED accounts per minute" >> ${LOG_FILE}
+			
+			runstate
+			
+	else if [ $SUCCESS = $MARGIN_STATUS ];
+		then
+			entryfound
+			echo `date` ":INFO :${SCRIPT}: EOD completed. Updating the table" >> ${LOG_FILE}
+	else
+		entryfound
+		echo `date` ":INFO :${SCRIPT}: EOD failed, please check. Updating the table" >> ${LOG_FILE}
+
+	fi
+	fi
+fi
+
+exit_success
+
