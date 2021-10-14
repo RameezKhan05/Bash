@@ -1,0 +1,177 @@
+mkdir learning_commands
+cd learning_commands
+grep --version
+grep user /etc/passwd
+grep ^user /etc/passwd
+grep user /etc/passwd|grep -i system
+declare -F
+declare -f
+declare -f|grep '^[a-z_]'
+declare -f|grep '^[a-z_ ]'
+declare -f|grep '^[a-z_ {]'
+declare -f|grep '^[_ {]'
+declare -f|grep '^[_{]'
+declare -f|grep '^[_{}]'
+declare -f module
+
+sed --version
+sed 'p' /etc/passwd
+sed -n 'p' /etc/passwd
+sed -n '1,5 p' /etc/passwd
+sed -n ' /^user/ p' /etc/passwd
+sed -n ' /^rec/ p' /etc/passwd
+sed ' /^#/ d' /app/home/reconusr/rmkhan/learning_commands/file.txt
+sed ' /^#/ d ; /^$/ d' /app/home/reconusr/rmkhan/learning_commands/file.txt
+sed ' /^#/ d ; /^\s*$/ d' /app/home/reconusr/rmkhan/learning_commands/file.txt
+sed -i.bak ' /^#/ d ; /^\s*$/ d' /app/home/reconusr/rmkhan/learning_commands/file.txt
+
+awk -W version
+awk --version
+awk ' { print } ' /app/home/reconusr/rmkhan/learning_commands/file.txt
+awk ' BEGIN { print "file.txt" } { print } END { print NR } ' /app/home/reconusr/rmkhan/learning_commands/file.txt
+awk ' BEGIN { print "file.txt" } { print NR, $0 } END { print NR } ' /app/home/reconusr/rmkhan/learning_commands/file.txt
+ifconfig
+ifconfig eth9 | awk -F":" '/HWaddr/{ print $3 $4 $5 $6 $7}'
+ifconfig eth10 | awk -F":" '/HWaddr/{ print $3 $4 $5 $6 $7}'
+ifconfig eth10 | awk -F":" '/HWaddr/{ print toupper($3 $4 $5 $6 $7)}'
+
+awk '{print}' employee.txt
+awk '/manager/ {print}' employee.txt
+awk '/tarun/ {print}' employee.txt
+awk '{print $1}' employee.txt
+awk '{print $0}' employee.txt
+awk '{print $0, $1}' employee.txt
+awk '{print $4, $1}' employee.txt
+awk '/manager/ {print $1}' employee.txt
+awk '/manager/ {print NR, $1}' employee.txt
+awk '/manager/ {print NR, $0}' employee.txt
+awk '/director/ {print NR, $0}' employee.txt
+awk '{print NR "-" $1}' geeksforgeeks.txt
+awk 'NR == 2 {print}' geeksforgeeks.txt
+awk '{if (length($0)>max)max = length($0)} END {print max}' geeksforgeeks.txt
+awk 'END {print NR}' geeksforgeeks.txt
+awk 'length($0) > 10' geeksforgeeks.txtawk '{ if($2 == "A12") print $0;}' geeksforgeeks.txt
+awk 'BEGIN {for (i=1; i<=99; i++) print "square of " i " is: " i*i}' > squares.txt
+awk 'BEGIN {for (i=1; i<=99; i++) print "square of " i " is: " i*i ". While cube of the same number is : " i*i*i }' > squares.txt
+awk 'BEGIN {for (i = 0; i <= 10000; i++) printf "ASCII value of %i = character %c\n", i, i}'
+
+	# gawk profile, created Mon Apr 26 17:09:06 2021
+	# BEGIN block(s)
+	BEGIN {
+		printf "---|Header|--\n"
+	}
+	# Rule(s)
+	{
+		print $0
+	}
+	# END block(s)
+	END {
+		printf "---|Footer|---\n"
+	}
+
+BEGIN {
+   cmd = "tr [a-z] [A-Z]"
+   print "hello, world !!!" |& cmd
+   close(cmd, "to")
+   
+   cmd |& getline out
+   print out;
+   close(cmd);
+}
+
+find . -type f -name "*txt" -exec sed -i 's/app4ften/snornfo555/g' {} +
+find . -type f -name "master_user_update.sh_all" -exec sed -i 's+E1087378+$EID+g' {} +
+find . -type f -name "EOD_status_report.sh" -exec sed -i 's/SCM_SC_GMI_END_TIME/SCM_SC_STATUS/g' {} +
+find . -type f -name "margin.conf" -exec sed -i 's+SubnodeName=margin+SubnodeName=CalcLog+g' {} +
+find . -type f -name "count.sh" -exec sed -i 's+FEB+MAY+g' {} +
+
+To find string from home
+find /app/home/dai -type f -exec grep -l '168.162.111.227' {} \;
+find /app/home/dai/logs_archive -mtime +7 -exec rm -rf {} \;
+find /app/home/dai/logs_archive -mtime +1 -iname "*StreamEvents*" -exec rm -rf {} \;
+
+find . -type f -name "certreq" -exec ls -ltr {} +
+find . -type f -name "*" -exec ls -lt {} \;
+
+sed 's/^.//' cronbackup_22mar21 > cronbackup_22mar21_new
+
+Top 20 big size directories
+du -a /| sort -n -r | head -n 20
+
+for commenting:
+:143,161s/^/#
+
+for uncommenting:
+:143,161s/^#/
+Obviously, here we're commenting lines from 66 to 70 (inclusive).
+
+def bs(a):
+	a = name of list
+	b=len(a)-1    # minus 1 because we always compare 2 adjacent values
+               
+   for x in range(b):
+     for y in range(b-x):
+       if a[y]>a[y+1]:
+         a[y],a[y+1]=a[y+1],a[y]
+   return a
+a=[32,5,3,6,7,54,87]
+bs(a)
+
+export DATE=`date +"%D"`
+
+awk 'BEGIN {print "Correct Securities, Wrong Securities"} NR!=1 {print $4 ", " $8}' insert_statements.sql|sed -e 's/ext_security_id=//g'>changedsecurity.csv
+
+echo "New subject with attachement" | mail -s "changes for $DATE" -a changedsecurity.csv $MAIL_LIST
+
+cp $HOME/landing_zone/source_file.txt $HOME/user/path/dest_file.txt
+
+size_at_source=`ls -ltr $HOME/landing_zone/source_file.txt |awk ' { print$5}'`
+size_at_dest=`ls -ltr $HOME/user/path/dest_file.txt |awk ' { print$5}'`
+
+if [ "$size_at_source" -eq "$size_at_dest" ]
+    then
+        echo "File size matches" 
+    else
+        echo "File size does not match" 
+
+
+tailer_lines=`tail -1 dest_file.txt`
+temp=`awk 'END{print NR}' dest_file.txt`
+line_count=`expr $temp - 2`
+
+if [ "$tailer_lines" -eq "$line_count" ]
+    then
+        echo "Count in file matches trailer count" 
+    else
+        echo "Count in file does not match trailer count" 
+
+sed -n -e '1!p' dest_file.txt|sed -n '$!p' > new_dest_file.txt
+
+Given  integers, compute their average, rounded to three decimal places.
+read x
+array=($(cat)) 
+array=${array[*]}
+printf "%.3f" $(echo $((${array// /+}))/$x | bc -l)
+
+read x
+echo $x | bc -l | xargs printf "%.3f"
+
+paste -sd $'\t\t\n'
+
+awk '{if (NF < 4){print "Not all scores are available for "$1}}'
+awk '{avg=($2+$3+$4)/3;print $0" : "(avg>=80?"A":(avg>=60?"B":(avg>=50?"C":"FAIL")))}'
+awk 'ORS=NR%2?";":"\n"'
+
+grep -iw 'that\|the\|then\|those'
+grep '\([0-9]\) *\1'
+
+sed 's/thy/{&}/gi'
+
+echo "Mail Body" | mail -s "Subject Line" -a attachment_file rameez.m.khan@gmail.com, paritosh.mishra@gmail.com
+
+alias loops='while true;do date; sleep 30; done;'
+alias fixpr='ps -fu `whoami`|grep -i fix'
+
+crontab -l|grep -v '#'|sort -k 2,2
+
+MAIL_DATE=`${ORACLE_HOME}/bin/sqlplus -s ${ORA_USER_ID}/${ORA_PASSWORD}@${ORACLE_SID} <<END
