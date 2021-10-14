@@ -248,3 +248,9 @@ END;
 
 then run ${ORACLE_HOME}/bin/sqlplus -s ${ORA_USER_ID}/${ORA_PASSWORD}@${ORACLE_SID} @aa.sql
 
+dql example
+whenever OSERROR exit 9
+whenever SQLERROR exit sql.sqlcode
+EXEC ABC_PKG.ADJUSTMENTS('BLOOM', null, 'PHASEING');   
+exit;
+
