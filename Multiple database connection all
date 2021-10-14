@@ -1,0 +1,297 @@
+#!/bin/bash
+. $HOME/.profile
+
+export ora_user_A="A"
+export ora_pwd_A="password"
+export ora_sid_A="A"
+
+export ora_user_B="B"
+export ora_pwd_B="password"
+export ora_sid_B="B"
+
+export ora_user_C="C"
+export ora_pwd_C="password"
+export ora_sid_C="C"
+
+export ora_user_D="D"
+export ora_pwd_D="password"
+export ora_sid_D="D"
+
+export ora_user_E="E"
+export ora_pwd_E="password"
+export ora_sid_E="E"
+
+export ora_user_F="F"
+export ora_pwd_F="password"
+export ora_sid_F="F"
+
+export ora_user_G="G"
+export ora_pwd_G="password"
+export ora_sid_G="G"
+
+export ora_user_H="H"
+export ora_pwd_H="password"
+export ora_sid_H="H"
+
+export ora_user_I="I"
+export ora_pwd_I="password"
+export ora_sid_I="I"
+
+export ora_user_J="J"
+export ora_pwd_J="password"
+export ora_sid_J="J"
+
+export ora_user_K="K"
+export ora_pwd_K="password"
+export ora_sid_K="K"
+
+export ora_user_L="L"
+export ora_pwd_L="password"
+export ora_sid_L="L"
+
+export ora_user_K="K"
+export ora_pwd_K="password"
+export ora_sid_K="K"
+
+export ora_user_M="M"
+export ora_pwd_M="password"
+export ora_sid_M="M"
+
+export ora_user_N="N"
+export ora_pwd_N="password"
+export ora_sid_N="N"
+
+export ora_user_O="O"
+export ora_pwd_O="password"
+export ora_sid_O="O"
+
+export ora_user_P="P"
+export ora_pwd_P="password"
+export ora_sid_P="P"
+
+export ora_user_Q="Q"
+export ora_pwd_Q="password"
+export ora_sid_Q="Q"
+
+export ora_user_R="R"
+export ora_pwd_R="password"
+export ora_sid_R="R"
+
+export ora_user_S="S"
+export ora_pwd_S="password"
+export ora_sid_S="S"
+
+export ora_user_T="T"
+export ora_pwd_T="password"
+export ora_sid_T="T"
+
+export ora_user_U="U"
+export ora_pwd_U="password"
+export ora_sid_U="U"
+
+echo "Employee Id :"
+
+read EID
+
+echo -e "S\n"
+sqlplus -s $ora_user_S/$ora_pwd_S@$ora_sid_S << END
+set pagesize 0 verify off timing off heading on
+UPDATE USER_PROPERTIES SET PASSWORD ='ABCD', PASSWD_KEY ='UVXY', STATUS ='Act' WHERE logon_id ='$EID';
+COMMIT;
+exit;
+echo -e "COMMIT COMPLETE\n"
+END
+
+echo -e "F\n"
+sqlplus -s $ora_user_F/$ora_pwd_F@$ora_sid_F << END
+set pagesize 0 verify off timing off heading on
+UPDATE USER_PROPERTIES SET PASSWORD ='ABCD', PASSWD_KEY ='UVXY', STATUS ='Act' WHERE logon_id ='$EID';
+COMMIT;
+exit;
+echo -e "COMMIT COMPLETE\n"
+END
+
+echo -e "K\n"
+sqlplus -s $ora_user_K/$ora_pwd_K@$ora_sid_K << END
+set pagesize 0 verify off timing off heading on
+UPDATE USER_PROPERTIES SET PASSWORD ='ABCD', PASSWD_KEY ='UVXY', STATUS ='Act' WHERE logon_id ='$EID';
+COMMIT;
+exit;
+echo -e "COMMIT COMPLETE\n"
+END
+
+echo -e "M\n"
+sqlplus -s $ora_user_M/$ora_pwd_M@$ora_sid_M << END
+set pagesize 0 verify off timing off heading on
+UPDATE USER_PROPERTIES SET PASSWORD ='ABCD', PASSWD_KEY ='UVXY', STATUS ='Act' WHERE logon_id ='$EID';
+COMMIT;
+exit;
+echo -e "COMMIT COMPLETE\n"
+END
+
+echo -e "A\n"
+sqlplus -s $ora_user_A/$ora_pwd_A@$ora_sid_A << END
+set pagesize 0 verify off timing off heading on
+UPDATE USER_PROPERTIES SET PASSWORD ='ABCD', PASSWD_KEY ='UVXY', STATUS ='Act' WHERE logon_id ='$EID';
+COMMIT;
+exit;
+echo -e "COMMIT COMPLETE\n"
+END
+
+echo -e "J\n"
+sqlplus -s $ora_user_J/$ora_pwd_J@$ora_sid_J << END
+set pagesize 0 verify off timing off heading on
+UPDATE USER_PROPERTIES SET PASSWORD ='ABCD', PASSWD_KEY ='UVXY', STATUS ='Act' WHERE logon_id ='$EID';
+COMMIT;
+exit;
+echo -e "COMMIT COMPLETE\n"
+END
+
+echo -e "K\n"
+sqlplus -s $ora_user_K/$ora_pwd_K@$ora_sid_K << END
+set pagesize 0 verify off timing off heading on
+UPDATE USER_PROPERTIES SET PASSWORD ='ABCD', PASSWD_KEY ='UVXY', STATUS ='Act' WHERE logon_id ='$EID';
+COMMIT;
+exit;
+echo -e "COMMIT COMPLETE\n"
+END
+
+echo -e "I\n"
+sqlplus -s $ora_user_I/$ora_pwd_I@$ora_sid_I << END
+set pagesize 0 verify off timing off heading on
+UPDATE USER_PROPERTIES SET PASSWORD ='ABCD', PASSWD_KEY ='UVXY', STATUS ='Act' WHERE logon_id ='$EID';
+COMMIT;
+exit;
+echo -e "COMMIT COMPLETE\n"
+END
+
+echo -e "T\n"
+sqlplus -s $ora_user_T/$ora_pwd_T@$ora_sid_T << END
+set pagesize 0 verify off timing off heading on
+UPDATE USER_PROPERTIES SET PASSWORD ='ABCD', PASSWD_KEY ='UVXY', STATUS ='Act' WHERE logon_id ='$EID';
+COMMIT;
+exit;
+echo -e "COMMIT COMPLETE\n"
+END
+
+echo -e "L\n"
+sqlplus -s $ora_user_L/$ora_pwd_L@$ora_sid_L << END
+set pagesize 0 verify off timing off heading on
+UPDATE USER_PROPERTIES SET PASSWORD ='ABCD', PASSWD_KEY ='UVXY', STATUS ='Act' WHERE logon_id ='$EID';
+COMMIT;
+exit;
+echo -e "COMMIT COMPLETE\n"
+END
+
+
+echo -e "P\n"
+sqlplus -s $ora_user_P/$ora_pwd_P@$ora_sid_P << END
+set pagesize 0 verify off timing off heading on
+UPDATE USER_PROPERTIES SET PASSWORD ='ABCD', PASSWD_KEY ='UVXY', STATUS ='Act' WHERE logon_id ='$EID';
+COMMIT;
+exit;
+echo -e "COMMIT COMPLETE\n"
+END
+
+
+echo -e "N\n"
+sqlplus -s $ora_user_N/$ora_pwd_N@$ora_sid_N << END
+UPDATE USER_PROPERTIES SET PASSWORD ='ABCD', PASSWD_KEY ='UVXY', STATUS ='Act' WHERE logon_id ='$EID';
+COMMIT;
+exit;
+echo -e "COMMIT COMPLETE\n"
+END
+
+echo -e "E\n"
+sqlplus -s $ora_user_E/$ora_pwd_E@$ora_sid_E << END
+set pagesize 0 verify off timing off heading on
+UPDATE USER_PROPERTIES SET PASSWORD ='ABCD', PASSWD_KEY ='UVXY', STATUS ='Act' WHERE logon_id ='$EID';
+COMMIT;
+exit;
+echo -e "COMMIT COMPLETE\n"
+END
+
+echo -e "O\n"
+sqlplus -s $ora_user_O/$ora_pwd_O@$ora_sid_O << END
+set pagesize 0 verify off timing off heading on
+UPDATE USER_PROPERTIES SET PASSWORD ='ABCD', PASSWD_KEY ='UVXY', STATUS ='Act' WHERE logon_id ='$EID';
+COMMIT;
+exit;
+echo -e "COMMIT COMPLETE\n"
+END
+
+echo -e "T\n"
+sqlplus -s $ora_user_T/$ora_pwd_T@$ora_sid_T << END
+set pagesize 0 verify off timing off heading on
+UPDATE USER_PROPERTIES SET PASSWORD ='ABCD', PASSWD_KEY ='UVXY', STATUS ='Act' WHERE logon_id ='$EID';
+COMMIT;
+exit;
+echo -e "COMMIT COMPLETE\n"
+END
+
+echo -e "G\n"
+sqlplus -s $ora_user_G/$ora_pwd_G@$ora_sid_G << END
+set pagesize 0 verify off timing off heading on
+UPDATE USER_PROPERTIES SET PASSWORD ='ABCD', PASSWD_KEY ='UVXY', STATUS ='Act' WHERE logon_id ='$EID';
+COMMIT;
+exit;
+echo -e "COMMIT COMPLETE\n"
+END
+
+echo -e "B\n"
+sqlplus -s $ora_user_B/$ora_pwd_B@$ora_sid_B << END
+set pagesize 0 verify off timing off heading on
+UPDATE USER_PROPERTIES SET PASSWORD ='ABCD', PASSWD_KEY ='UVXY', STATUS ='Act' WHERE logon_id ='$EID';
+COMMIT;
+exit;
+echo -e "COMMIT COMPLETE\n"
+END
+
+echo -e "R\n"
+sqlplus -s $ora_user_R/$ora_pwd_R@$ora_sid_R << END
+set pagesize 0 verify off timing off heading on
+UPDATE USER_PROPERTIES SET PASSWORD ='ABCD', PASSWD_KEY ='UVXY', STATUS ='Act' WHERE logon_id ='$EID';
+COMMIT;
+exit;
+echo -e "COMMIT COMPLETE\n"
+END
+
+echo -e "D\n"
+sqlplus -s $ora_user_D/$ora_pwd_D@$ora_sid_D << END
+set pagesize 0 verify off timing off heading on
+UPDATE USER_PROPERTIES SET PASSWORD ='ABCD', PASSWD_KEY ='UVXY', STATUS ='Act' WHERE logon_id ='$EID';
+COMMIT;
+exit;
+echo -e "COMMIT COMPLETE\n"
+END
+
+echo -e "H\n"
+echo -e "STATUS\n"
+sqlplus -s $ora_user_H/$ora_pwd_H@$ora_sid_H << END
+set pagesize 0 verify off timing off heading on
+UPDATE USER_PROPERTIES SET PASSWORD ='ABCD', PASSWD_KEY ='UVXY', STATUS ='Act' WHERE logon_id ='$EID';
+COMMIT;
+exit;
+echo -e "COMMIT COMPLETE\n"
+END
+
+echo -e "C\n"
+sqlplus -s $ora_user_C/$ora_pwd_C@$ora_sid_C << END
+set pagesize 0 verify off timing off heading on
+UPDATE USER_PROPERTIES SET PASSWORD ='ABCD', PASSWD_KEY ='UVXY', STATUS ='Act' WHERE logon_id ='$EID';
+COMMIT;
+exit;
+echo -e "COMMIT COMPLETE\n"
+END
+
+echo -e "Q\n"
+sqlplus -s $ora_user_Q/$ora_pwd_Q@$ora_sid_Q << END
+set pagesize 0 verify off timing off heading on
+UPDATE USER_PROPERTIES SET PASSWORD ='ABCD', PASSWD_KEY ='UVXY', STATUS ='Act' WHERE logon_id ='$EID';
+COMMIT;
+exit;
+echo -e "COMMIT COMPLETE\n"
+END
+
+exit 0
+
