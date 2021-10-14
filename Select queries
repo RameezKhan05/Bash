@@ -1,0 +1,250 @@
+Speed check for 1, 5 and 10 minutes
+
+SELECT count(1) FROM table_name WHERE business_date ='26jul21' and end_time between (select sysdate - 1/24/60 from dual) and sysdate;
+SELECT count(1) FROM table_name WHERE business_date ='26jul21' and end_time between (select sysdate - 6/24/60 from dual) and (select sysdate - 5/24/60 from dual);
+SELECT count(1) FROM table_name WHERE business_date ='26jul21' and end_time between (select sysdate - 11/24/60 from dual) and (select sysdate - 10/24/60 from dual);
+exit;
+
+update statements 
+select distinct 'update table_name set processed_status = 0, ext_security_id=' || '''' || sx.security_alias || '''' || ' where processed_status=7 and ext_security_id=' || '''' || ctd.EXT_SECURITY_ID || '''' || ' and trunc(effective_date)=' || ''''|| (select trunc(PROCESS_CURRENT_DATE) from PROCESS_DATE where PROCESS_DESCRIPTION = 'BATCH_BUSINESS_DATE') || '''' || ';' from security_Xref sx,transaction trn,table_name ctd where sx.security_id=trn.security_id and trn.originating_system_id=ctd.originating_system_id and ctd.processed_status=7  and sx.security_alias_type='SYMBOL' and trunc(ctd.effective_date)=(select trunc(PROCESS_CURRENT_DATE)from PROCESS_DATE where PROCESS_DESCRIPTION = 'BATCH_BUSINESS_DATE')
+
+
+SELECT process_description FROM  table_name WHERE process_date = '03jun21' AND process_description LIKE '%report%'
+MINUS
+SELECT process_description FROM  table_name WHERE process_date = '08oct21' AND process_description LIKE '%report%'
+
+SELECT status FROM table_name WHERE process_description ='EXECUTIONS_BATCH_CYCLE' 
+AND process_date=(SELECT process_current_date FROM process_date WHERE process_description = 'BATCH_BUSINESS_DATE');
+
+UPDATE table_name SET Status = 'SUCCESS' WHERE process_description ='EXECUTIONS_BATCH_CYCLE' AND process_date=(SELECT process_current_date FROM process_date WHERE process_description = 'BATCH_BUSINESS_DATE');
+
+create table table_name_27nov19 as SELECT * FROM table_name
+
+select * from error e where e.transaction_id in (select transaction_id from trnf1_eod tc where tc.reconcile_date = '18apr11'
+and (tc.source_table in ('GMIPASF1', 'GMIDTNF1') or (tc.source_table = 'GMIBMLF1' and tc.precid = 'B')) /* only busts,cancels from BML */ 
+and tc.processed_status =7) and e.error_ID <> 29 /* CODE_XREFs errors do not cause transactions to fail */  and e.error_desc not like '%post%' 
+order by e.error_date desc
+
+SELECT * FROM table_name WHERE order_number IN (
+SELECT originating_system_id FROM table_name 
+WHERE effective_date=(SELECT PROCESS_CURRENT_DATE FROM process_date 
+WHERE process_description = 'BATCH_BUSINESS_DATE') AND processed_status<>1);
+
+SELECT processed_status, COUNT (*) FROM table_name 
+WHERE created_on < TO_DATE('20-feb-17 20:40:00', 'DD-Mon-YY HH24:MI:SS') 
+AND created_on > TO_DATE('14-feb-17 23:40:00', 'DD-Mon-YY HH24:MI:SS') AND 
+processed_status IN (0,2,7,87) GROUP BY processed_status
+
+SELECT process_date,start_time,end_time,
+TRUNC(((86400*(end_time-start_time))/60)/60)-24*(TRUNC((((86400*(end_time-start_time))/60)/60)/24)) "Hrs",
+TRUNC((86400*(end_time-start_time))/60)-60*(TRUNC(((86400*(end_time-start_time))/60)/60)) "Min",
+TRUNC(86400*(end_time-start_time))-60*(TRUNC((86400*(end_time-start_time))/60)) "Sec"
+FROM  table_name WHERE process_description LIKE '%Margin%' --and entity_id = 1--and process_date = '08oct21s'
+ORDER BY start_time DESC
+
+select process_date,start_time,end_time,(end_time - start_time) * 1440 from table_name WHERE process_description LIKE '%Margin%' --and entity_id = 1--and process_date = '08oct21s'
+ORDER BY start_time DESC
+
+ select round(to_number(end_time - start_time) * 24)
+  from table_name WHERE process_description LIKE '%Margin%' --and entity_id = 1--and process_date = '08oct21s'
+ORDER BY start_time DESC
+
+select start_time, end_time, 
+(24 * extract(day from (end_time - start_time) day(9) to second)) + 
+extract(hour from (end_time - start_time) day(9) to second) + ((1/100) * extract(minute from (end_time - start_time) day(9) to second))
+as "HOUR.MINUTE"  from table_name 
+WHERE process_description LIKE '%Margin%' --and entity_id = 1--and process_date = '08oct21s'
+ORDER BY start_time DESC
+
+SELECT process_date, start_time, end_time, 
+--trunc(end_time-start_time) days,
+mod( trunc( ( end_time-start_time ) * 24 ), 24) || ':' ||
+mod( trunc( ( end_time-start_time ) * 1440 ), 60 ) || ':' ||
+mod( trunc( ( end_time-start_time ) * 86400 ), 60 ) "RUN_TIME"
+FROM table_name 
+WHERE process_description LIKE '%Margin%'
+--and process_date = '08oct21'
+ORDER BY start_time DESC
+
+select start_time, end_time, 
+(24 * extract(day from (end_time - start_time) day(9) to second)) + 
+--extract(hour from (end_time - start_time) day(9) to second) + 
+((1/100) * extract(minute from (end_time - start_time) day(9) to second))
+--+ ((1/10000) * extract(second from (end_time - start_time) day(9) to second))
+as "HOUR.MINUTE"  from table_name 
+WHERE process_description LIKE '%Margin%' --and entity_id = 1--and process_date = '08oct21s'
+ORDER BY start_time DESC
+
+SELECT process_description,process_date,end_time FROM  table_name WHERE process_date = '08oct21'
+and (process_description = 'Margin' or process_description like 'Rep' or process_description like 'ADJUSTRep' 
+or process_description like 'MINI'or process_description like 'FAIL' )
+
+UPDATE seditl SET firm_nbr = firm_nbr WHERE TRIM (cusip_number) 
+IN (SELECT DISTINCT cusip FROM (SELECT EXTRACT (client_msg_data,'//CUSIP_NUMBER/text()').getstringval () AS cusip FROM client_msg WHERE table_name = 'XYZ' AND processed_status = 7)); 
+ 
+UPDATE secbas SET do_update = do_update + 1 WHERE TRIM (cusip_number) IN (SELECT DISTINCT cusip FROM (SELECT EXTRACT (client_msg_data, '//CUSIP_NUMBER/text()').getstringval () AS cusip FROM client_msg WHERE table_name = 'XYZ' AND processed_status = 7)); 
+
+-- tables transaction arrival Vs Processed delay query
+
+select processed_date, timestamp,  extract (DAY from DIFF) Days, 
+ extract (HOUR from DIFF) Hours, 
+ extract( MINUTE from DIFF) MInutes, 
+ extract (SECOND from DIFF) Seconds 
+from (select processed_date, timestamp, to_timestamp(processed_date, 'dd/mm/rr HH24:MI:SS.FF3') - to_timestamp(timestamp, 'dd/mm/rr HH24:MI:SS.FF3') DIFF from tables
+where entry_date >= '12mar18')
+order by timestamp desc;
+
+-- tables speed 
+select count(1), processed_date-(mod((processed_date-trunc(processed_date, 'hh24'))*24*60, 1))/(24*60) 
+    from tables where entry_date >= '12mar18'      
+group by processed_date-(mod((processed_date-trunc(processed_date, 'hh24'))*24*60, 1))/(24*60)
+order by processed_date-(mod((processed_date-trunc(processed_date, 'hh24'))*24*60, 1))/(24*60)  desc; 
+
+-- tables speed (in case records are migrated to arch schema)
+select count(1), processed_date-(mod((processed_date-trunc(processed_date, 'hh24'))*24*60, 1))/(24*60) 
+    from arch_tables where entry_date >= '12mar18'      
+group by processed_date-(mod((processed_date-trunc(processed_date, 'hh24'))*24*60, 1))/(24*60)
+order by processed_date-(mod((processed_date-trunc(processed_date, 'hh24'))*24*60, 1))/(24*60)  desc; 
+
+-- table_name speed query
+select count(1), processed_date-(mod((processed_date-trunc(processed_date, 'hh24'))*24*60, 1))/(24*60) 
+    from table_name where entry_date >= '12mar18'      
+group by processed_date-(mod((processed_date-trunc(processed_date, 'hh24'))*24*60, 1))/(24*60)
+order by processed_date-(mod((processed_date-trunc(processed_date, 'hh24'))*24*60, 1))/(24*60)  desc
+
+select count(1), processed_date-(mod((processed_date-trunc(processed_date, 'hh24'))*24*60, 1))/(24*60) 
+    from tables where entry_date >= '08jun21'      
+group by processed_date-(mod((processed_date-trunc(processed_date, 'hh24'))*24*60, 1))/(24*60)
+order by processed_date-(mod((processed_date-trunc(processed_date, 'hh24'))*24*60, 1))/(24*60)  desc; 
+
+select count(1), processed_date-(mod((processed_date-trunc(processed_date, 'hh24'))*24*60, 1))/(24*60) 
+    from tables where entry_full_date >= '31dec18'      
+group by processed_date-(mod((processed_date-trunc(processed_date, 'hh24'))*24*60, 1))/(24*60)
+order by processed_date-(mod((processed_date-trunc(processed_date, 'hh24'))*24*60, 1))/(24*60)  desc; 
+
+select count(1), processed_date-(mod((processed_date-trunc(processed_date, 'hh24'))*24*60, 1))/(24*60) 
+    from tables where entry_full_date >= '31dec18'      
+group by processed_date-(mod((processed_date-trunc(processed_date, 'hh24'))*24*60, 1))/(24*60)
+order by processed_date-(mod((processed_date-trunc(processed_date, 'hh24'))*24*60, 1))/(24*60)  desc; 
+
+--Account speed
+
+select count(1), end_time-(mod((end_time-trunc(end_time, 'hh24'))*24*60, 1))/(24*60) 
+    from table_name where business_date >= '08jun21'      
+group by end_time-(mod((end_time-trunc(end_time, 'hh24'))*24*60, 1))/(24*60)
+order by end_time-(mod((end_time-trunc(end_time, 'hh24'))*24*60, 1))/(24*60)  desc;
+
+select ax.account_alias as account, filter.account_alias as
+            acc_table
+from account_x ax
+join
+            (select account_id, entity_id, account_alias from account_x where
+                        source_system = 'BLOOM' and account_alias_type like
+                        'Account Number%'
+            ) filter on ax.account_id = filter.account_id and ax.entity_id =
+            filter.entity_id and ax.source_system = 'I'
+order by ax.account_alias;
+
+update tables set TIMESTAMP=PROCESSED_DATE WHERE reconcile_date = (SELECT process_current_date FROM date_table 
+WHERE process_description = 'Main Business Date') AND processed_date > (TIMESTAMP + 10 / 1440)
+
+
+DECLARE
+hold_ext_loc_id VARCHAR2(2):='BX';
+hold_loc_id NUMBER;
+
+BEGIN
+SELECT MAX(loc_id) into hold_loc_id   FROM LOCATION; -- 4902
+
+hold_loc_id := hold_loc_id +1;
+
+INSERT INTO LOCATION (loc_id, description,created_on, created_by,PROCESS_POSITION_BALANCE) 
+VALUES (hold_loc_id, hold_ext_loc_id, SYSDATE,'PUNE','Y');
+             
+INSERT INTO LOCATION_X (external_loc_id, source_system, loc_id,created_on, created_by,ENTITY_ID)
+VALUES (hold_ext_loc_id, 'PHASING', hold_loc_id, SYSDATE, 'PUNE',1);
+             
+INSERT INTO LOCATION_X (external_loc_id, source_system, loc_id,created_on, created_by,ENTITY_ID)
+VALUES (hold_ext_loc_id, 'UNFAZED', hold_loc_id, SYSDATE, 'PUNE',1);
+
+END;
+
+DECLARE
+	   --Declare local variables
+	l_counter NUMBER;
+
+BEGIN
+	 /*This is how you put 
+	 multiline comments*/
+	 l_counter := 1; -- l_var assigned value
+	 dbms_output.put_line('l_counter in the inner block is '||l_counter);
+	 /* dbms_output.put_line sends
+	 output mesages to the console */
+
+EXCEPTION
+		 WHEN OTHERS THEN
+		 --Do Something
+		 null;
+END;
+
+DECLARE
+	l_var   NUMBER;
+	l_outer NUMBER;
+	
+BEGIN
+	 l_outer := 1;
+	 l_var   := 1;	 
+			
+			DECLARE
+				l_var   NUMBER;
+			 	l_inner NUMBER;
+
+			BEGIN
+				 l_inner := 2;
+				 l_var   := 2;
+				 dbms_output.put_line('l_var in the inner block is '||l_var);
+				 dbms_output.put_line('l_inner in the inner block is '||l_inner);
+				 dbms_output.put_line('l_outer in the inner block is '||l_outer);
+			
+			END;
+			dbms_output.put_line('l_var in the outer block is '||l_var);
+	 
+EXCEPTION
+		 WHEN OTHERS THEN
+		 --Do Something
+		 null;
+END;
+
+<<parent>>
+DECLARE
+	l_var   NUMBER;
+	l_outer NUMBER;
+	
+BEGIN
+	 l_outer := 1;
+	 l_var   := 1;	 
+			
+			DECLARE
+				l_var   NUMBER;
+			 	l_inner NUMBER;
+
+			BEGIN
+				 l_inner := 2;
+				 l_var   := 2;
+				 dbms_output.put_line('l_var in the inner block is '||l_var);
+				 dbms_output.put_line('l_var from the outer block using label is '||parent.l_var);
+			
+			END;
+			dbms_output.put_line('l_var in the outer block is '||l_var);
+	 
+EXCEPTION
+		 WHEN OTHERS THEN
+		 --Do Something
+		 null;
+END;
+
+
+ make a .sql file and keep procedures, end with exit
+
+then run ${ORACLE_HOME}/bin/sqlplus -s ${ORA_USER_ID}/${ORA_PASSWORD}@${ORACLE_SID} @aa.sql
+
